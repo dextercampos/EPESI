@@ -10,6 +10,7 @@ modules/*
 !modules/Apps
 !modules/Base
 !modules/CRM
+!modules/Custom
 !modules/Data
 !modules/FirstRun
 !modules/Libs
