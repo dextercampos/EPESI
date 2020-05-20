@@ -35,7 +35,7 @@ final class Custom_MailChimp_Bridge_List
     public static function getMailChimp(): MailChimp
     {
         if (self::$mailchimp === null) {
-            $apiKey = Custom_ApiCommon::decrypt(Variable::get(self::API_KEY_VARIABLE_NAME, false));
+            $apiKey = Custom_ApiCommon::decrypt(Variable::get(self::API_KEY_VARIABLE_NAME));
             self::$mailchimp = new MailChimp($apiKey);
         }
 
@@ -128,12 +128,12 @@ final class Custom_MailChimp_Bridge_List
         return $audience;
     }
 
-    private static function newWebhook($listId): bool
+    public static function newWebhook($listId): bool
     {
         $data = [
             'url' => self::getWebhookUrl()
         ];
-
+dump(\sprintf('lists/%s/webhooks', $listId), $data);
         self::getMailChimp()->post(\sprintf('lists/%s/webhooks', $listId), $data);
 
         return true;

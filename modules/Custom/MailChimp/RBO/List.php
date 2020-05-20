@@ -79,7 +79,7 @@ final class Custom_MailChimp_RBO_List extends RBO_Recordset
 
         $fields[] = (new RBO_Field_Text(_M('Name'), 255))->set_required()->set_visible();
 
-        $fields[] = (new RBO_Field_LongText(_M('Permission Reminder')));
+        $fields[] = (new RBO_Field_LongText(_M('Permission Reminder')))->set_required();
         $fields[] = (new RBO_Field_Checkbox(_M('Email Type Option')));
         $fields[] = (new RBO_Field_Calculated(_M('Linked'), 'checkbox'))->set_extra();
 

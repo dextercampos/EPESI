@@ -21,6 +21,11 @@ class Custom_MailChimpCommon extends ModuleCommon
         return ['syncNewLists' => 1];
     }
 
+    public static function help()
+    {
+        return Base_HelpCommon::retrieve_help_from_file(self::Instance()->get_type());
+    }
+
     public static function menu(): array
     {
         if (Utils_RecordBrowserCommon::get_access((new Custom_MailChimp_RBO_List())->table_name(), 'browse')) {
@@ -28,6 +33,11 @@ class Custom_MailChimpCommon extends ModuleCommon
         }
 
         return [];
+    }
+
+    public static function processWebhook()
+    {
+        Custom_MailChimp_Bridge_Webhook::applySubscriptions();
     }
 
     public static function syncNewLists(): ?string
@@ -44,12 +54,6 @@ class Custom_MailChimpCommon extends ModuleCommon
 
         return null;
     }
-
-    public static function processWebhook()
-    {
-        Custom_MailChimp_Bridge_Webhook::applySubscriptions();
-    }
-
 }
 
 require_once 'modules/Custom/MailChimp/libs/autoload.php';

@@ -26,5 +26,6 @@ Thumbs.db
 # Composer packages directory
 vendor
 !modules/CRM/Roundcube/RC/vendor
+!modules/Custom/**/vendor
 
 tests/config.yml

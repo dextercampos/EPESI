@@ -12,9 +12,16 @@ class Custom_MailChimp extends Module
 
     public function body(): void
     {
+        Custom_MailChimp_Bridge_List::newWebhook('7b4b081e01');
         if (Custom_MailChimp_Bridge_List::getApiEndpoint() === null) {
-            echo '<h2>MailChimp not yet configured.</h2><b><a '
-                . $this->create_callback_href([$this, 'admin']) . '>Click here to configure.</a></b>';
+            echo '<h2>MailChimp not yet configured.</h2>';
+            if (Base_AclCommon::i_am_admin()) {
+                echo '<b><a ' . $this->create_callback_href([$this, 'admin']) . '>Click here to configure.</a></b>';
+
+                return;
+            }
+
+            echo '<b>Please contact your administrator.</b>';
 
             return;
         }
@@ -24,6 +31,9 @@ class Custom_MailChimp extends Module
             Utils_RecordBrowser::module_name(),
             (new Custom_MailChimp_RBO_List())->table_name()
         );
+        $company = CRM_ContactsCommon::get_company(CRM_ContactsCommon::get_my_record()['company_name'] ?? null);
+        $defaults = $company ?? [];
+        $listRb->set_defaults($defaults);
 
         $this->display_module($listRb);
     }

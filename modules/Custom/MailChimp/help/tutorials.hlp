@@ -1,0 +1,15 @@
+[LABEL:Create new Mailchimp List]
+[KEYWORDS:create mailchimp list]
+[CONTEXT:true]
+[STEPS:
+hover:Menu
+hover:Menu_CRM
+click:Menu_CRM_MailChimp List
+click:browse_custom_mailchimp_list->ActionBar_add
+fill:rb_add_custom_mailchimp_list->#name // Enter list name
+fill:rb_add_custom_mailchimp_list->#permission_reminder // Enter permission reminder
+prompt:rb_add_custom_mailchimp_list->#company_name // Please fill in required contact and defaults.
+click:rb_add_custom_mailchimp_list->ActionBar_save
+finish:rb_add_custom_mailchimp_list->ActionBar_edit // A new mailchimp list has been created
+finish:rb_view_custom_mailchimp_list->ActionBar_edit // A new contact has been created
+]
