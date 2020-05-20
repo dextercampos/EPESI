@@ -98,7 +98,8 @@ class Utils_RecordBrowserCommon extends ModuleCommon {
             if (!isset(self::$hash[$field])) trigger_error('Unknown field "'.$field.'" for recordset "'.$tab.'"',E_USER_ERROR);
             $field = self::$hash[$field];
         }
-        if ($desc===null) $desc = self::$table_rows[$field];
+      
+        $desc = array_merge(self::$table_rows[$field], $desc?: []);
         if(!array_key_exists('id',$record)) $record['id'] = null;
         if (!array_key_exists($desc['id'],$record)) trigger_error($desc['id'].' - unknown field for record '.serialize($record), E_USER_ERROR);
         $val = $record[$desc['id']];
@@ -247,6 +248,22 @@ class Utils_RecordBrowserCommon extends ModuleCommon {
 		
 		return $ret;
     }
+    public static function display_checkbox_setting($record, $nolink=false, $desc=null, $tab=null) {
+    	$img = self::display_checkbox_icon($record, $nolink, $desc);
+    
+    	$rb_obj = Utils_RecordBrowser::$rb_obj;
+    
+    	if (!$img || $nolink || !$desc || !($rb_obj instanceof Utils_RecordBrowser)) return $img;
+    		
+    	$href = $rb_obj->create_callback_href(array('Utils_RecordBrowserCommon', 'set_checkbox_setting'), array($tab, $record['id'], $desc['id'], $record[$desc['id']]?0:1));
+    
+    	$tooltip_attrs = Utils_TooltipCommon::open_tag_attrs(__('Click to toggle'));
+    
+    	return "<a $href $tooltip_attrs>" . $img . '</a>';
+    }
+    public static function set_checkbox_setting($tab, $id, $field, $active=1) {
+    	self::update_record($tab, $id, array($field=>$active));
+    }
     public static function display_date($record, $nolink, $desc=null) {
     	$ret = '';
     	if (isset($desc['id']) && isset($record[$desc['id']]) && $record[$desc['id']]!=='') {
@@ -287,7 +304,7 @@ class Utils_RecordBrowserCommon extends ModuleCommon {
     public static function format_long_text($text){
 		$ret = htmlspecialchars($text);
 		$ret = str_replace("\n",'<br>',$ret);
-		$ret = Utils_BBCodeCommon::parse($ret);
+		$ret = Utils_BBCodeCommon::parse(htmlspecialchars_decode($ret));
         return $ret;
     }
     public static function encode_multi($v) {
@@ -634,6 +651,7 @@ class Utils_RecordBrowserCommon extends ModuleCommon {
                         'id'=>self::get_field_id($row['field']),
                         'pkey'=>$row['id'],
                         'type'=>$row['type'],
+                        'caption'=>$row['caption'],
                         'visible'=>$row['visible'],
                         'required'=>($row['type']=='calculated'?false:$row['required']),
                         'extra'=>$row['extra'],
@@ -931,7 +949,7 @@ class Utils_RecordBrowserCommon extends ModuleCommon {
 		}
 
         DB::StartTrans();
-        if (is_string($definition['position'])) $definition['position'] = DB::GetOne('SELECT position FROM '.$tab.'_field WHERE field=%s', array($definition['position']))+1;
+        if (is_string($definition['position'])) $definition['position'] = self::get_field_position($tab, $definition['position'])+1;
         if ($definition['position']===null || $definition['position']===false) {
             $first_page_split = $set_empty_position_before_first_page_split?DB::GetOne('SELECT MIN(position) FROM '.$tab.'_field WHERE type=%s AND field!=%s', array('page_split', 'General')):0;
             $definition['position'] = $first_page_split?$first_page_split:DB::GetOne('SELECT MAX(position) FROM '.$tab.'_field')+1;
@@ -970,10 +988,12 @@ class Utils_RecordBrowserCommon extends ModuleCommon {
         @DB::Execute('UPDATE '.$tab.'_data_1 SET indexed=0');
     }
     public static function change_field_position($tab, $field, $new_pos){
+    	$new_pos = is_string($new_pos)? (self::get_field_position($tab, $new_pos)+1): $new_pos;
+
         if ($new_pos <= 2) return; // make sure that no field is before "General" tab split
+        
         DB::StartTrans();
-        $pos = DB::GetOne('SELECT position FROM ' . $tab . '_field WHERE field=%s', array($field));
-        if ($pos) {
+        if ($pos = self::get_field_position($tab, $field)) {
             // move all following fields back
             DB::Execute('UPDATE '.$tab.'_field SET position=position-1 WHERE position>%d',array($pos));
             // make place for moved field
@@ -982,6 +1002,10 @@ class Utils_RecordBrowserCommon extends ModuleCommon {
             DB::Execute('UPDATE '.$tab.'_field SET position=%d WHERE field=%s',array($new_pos, $field));
         }
         DB::CompleteTrans();
+    }
+    
+    public static function get_field_position($tab, $field){    
+    	return DB::GetOne('SELECT position FROM '.$tab.'_field WHERE field=%s', array($field));
     }
 
     /**
@@ -998,7 +1022,7 @@ class Utils_RecordBrowserCommon extends ModuleCommon {
         $type = DB::GetOne('SELECT type FROM ' . $tab . '_field WHERE field=%s', array($old_name));
         $old_param = DB::GetOne('SELECT param FROM ' . $tab . '_field WHERE field=%s', array($old_name));
         
-        $db_field_exists = !($type === 'calculated' && !$old_param);
+        $db_field_exists = !(in_array($type, ['calculated', 'hidden'], true) && !$old_param) && $type!== 'page_split';
         
         DB::StartTrans();
         if ($db_field_exists) {
@@ -1023,9 +1047,9 @@ class Utils_RecordBrowserCommon extends ModuleCommon {
         	if (!is_object($crits))
         		$crits = Utils_RecordBrowser_Crits::from_array($crits);
         
-        		foreach ($crits->find($id) as $c) $c->set_field($new_id);
+        	foreach ($crits->find($id)?:[] as $c) $c->set_field($new_id);
         
-        		DB::Execute('UPDATE ' . $tab . '_access SET crits=%s WHERE id=%d', array(self::serialize_crits($crits), $row['id']));
+        	DB::Execute('UPDATE ' . $tab . '_access SET crits=%s WHERE id=%d', array(self::serialize_crits($crits), $row['id']));
         }
         
         DB::CompleteTrans();
@@ -1363,7 +1387,7 @@ class Utils_RecordBrowserCommon extends ModuleCommon {
                 $values[$desc['id']] = self::encode_multi($filestorageIds[$field]);
 	        }
 
-            if ($desc['type']=='calculated' && preg_match('/^[a-z]+(\([0-9]+\))?$/i',$desc['param'])===0) continue; // FIXME move DB definiton to *_field table
+	        if (($desc['type']=='calculated' || $desc['type']=='hidden') && preg_match('/^[a-z]+(\([0-9]+\))?$/i',$desc['param'])===0) continue; // FIXME move DB definiton to *_field table
             if (!isset($values[$desc['id']]) || $values[$desc['id']]==='') continue;
 			if (!is_array($values[$desc['id']])) $values[$desc['id']] = trim($values[$desc['id']]);
             if ($desc['type']=='long text')
@@ -1538,28 +1562,7 @@ class Utils_RecordBrowserCommon extends ModuleCommon {
 						date('Y-m-d H:i:s')));
     }
     public static function merge_crits($a = array(), $b = array(), $or=false) {
-        if (is_array($a)) {
-            $a = Utils_RecordBrowser_Crits::from_array($a);
-        }
-        if (!($a instanceof Utils_RecordBrowser_Crits)) {
-            $a = new Utils_RecordBrowser_Crits($a);
-        }
-        if (is_array($b)) {
-            $b = Utils_RecordBrowser_Crits::from_array($b);
-        }
-        if (!($b instanceof Utils_RecordBrowser_Crits)) {
-            $b = new Utils_RecordBrowser_Crits($b);
-        }
-        if ($a->is_empty()) {
-            return clone $b;
-        }
-        if ($b->is_empty()) {
-            return clone $a;
-        }
-        $a = clone $a;
-        $b = clone $b;
-        $ret = $or ? $a->_or($b) : $a->_and($b);
-        return $ret;
+        return Utils_RecordBrowser_Crits::merge($a, $b, $or);
     }
     public static function build_query($tab, $crits = null, $admin = false, $order = array(), $tab_alias = 'r') {
         static $stack = array();
@@ -1573,7 +1576,7 @@ class Utils_RecordBrowserCommon extends ModuleCommon {
         }
 
         $access_crits = ($admin || in_array($tab, $stack)) ? true : self::get_access_crits($tab, 'browse');
-        if ($access_crits == false) return array();
+        if ($access_crits === false) return array();
         elseif ($access_crits !== true) {
             $crits = self::merge_crits($crits, $access_crits);
         }
@@ -3163,7 +3166,33 @@ class Utils_RecordBrowserCommon extends ModuleCommon {
         }
         return DB::GetOne('SELECT pattern FROM recordbrowser_clipboard_pattern WHERE tab=%s AND enabled=1', array($tab));
     }
-	
+        
+    public static function replace_clipboard_pattern($text, $data) {
+    	/* some complicate preg match to find every occurence
+    	 * of %{ .. {f_name} .. } pattern
+    	 */
+    	$match = [];
+    	if (preg_match_all('/%\{(([^%\}\{]*?\{[^%\}\{]+?\}[^%\}\{]*?)+?)\}/', $text, $match)) { // match for all patterns %{...{..}...}
+    		foreach ($match[0] as $k => $matched_string) {
+    			$text_replace = $match[1][$k];
+    			$changed = false;
+    			$second_match = [];
+    			while(preg_match('/\{(.+?)\}/', $text_replace, $second_match)) { // match for keys in braces {key}
+    				$replace_value = '';
+    				if(array_key_exists($second_match[1], $data)) {
+    					$replace_value = $data[$second_match[1]];
+    					$changed = true;
+    				}
+    				$text_replace = str_replace($second_match[0], $replace_value, $text_replace);
+    			}
+    			if(! $changed ) $text_replace = '';
+    			$text = str_replace($matched_string, $text_replace, $text);
+    		}
+    	}
+    	
+    	return $text;
+    }
+    	
 	public static function get_field_tooltip($label) {
 		if(strpos($label,'Utils_Tooltip')!==false) return $label;
 		$args = func_get_args();
@@ -3545,12 +3574,13 @@ class Utils_RecordBrowserCommon extends ModuleCommon {
 			if(!empty($fileStorageId)) {
 				$actions = $fileHandler->getActionUrlsRB($fileStorageId, $tab, $r['id'], $desc['id']);
 				$labels[]= Utils_FileStorageCommon::get_file_label($fileStorageId, $nolink, true, $actions);
-				$inline_nodes[]= Utils_FileStorageCommon::get_file_inline_node($fileStorageId, $actions);
+				if (!($desc['nopreview']?? false))
+					$inline_nodes[]= Utils_FileStorageCommon::get_file_inline_node($fileStorageId, $actions, $desc['max-width']?? '200px');
 			}
 		}
 		$inline_nodes = array_filter($inline_nodes);
 		
-		return implode('<br>', $labels) . ($inline_nodes? '<hr>': '') . implode('<hr>', $inline_nodes);
+		return implode('<br>', $labels) . ($inline_nodes? '<hr>': '') . implode('&nbsp;', $inline_nodes);
 	}
 
 	public static function QFfield_file(&$form, $field, $label, $mode, $default, $desc, $rb_obj)

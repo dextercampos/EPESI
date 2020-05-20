@@ -146,6 +146,17 @@ class Utils_RecordBrowser_CritsSingle extends Utils_RecordBrowser_CritsInterface
         $this->negation = $negation;
         $this->raw_sql_value = $raw_sql_value;
     }
+    
+    public static function __set_state($array)
+    {
+    	$crits = new static();
+    	
+    	foreach ($array as $key => $value) {
+    		$crits->{$key} = $value;
+    	}
+    	
+    	return $crits;
+    }
 
     public static function parse_subfield($field)
     {
@@ -299,6 +310,17 @@ class Utils_RecordBrowser_CritsRawSQL extends Utils_RecordBrowser_CritsInterface
         }
         $this->vals = $values;
     }
+    
+    public static function __set_state($array)
+    {
+    	$crits = new static();
+    	
+    	foreach ($array as $key => $value) {
+    		$crits->{$key} = $value;
+    	}
+    	
+    	return $crits;
+    }
 
     /**
      * @return mixed
@@ -385,18 +407,28 @@ class Utils_RecordBrowser_Crits extends Utils_RecordBrowser_CritsInterface
 
     public function __construct($crits = null, $or = false)
     {
-        if ($crits) {
+        if ($crits && !is_bool($crits)) {
             if (is_array($crits)) {
-                $builder = new Utils_RecordBrowser_CritsBuilder();
-                $crits = $builder->build_single($crits);
+                $crits = Utils_RecordBrowser_CritsBuilder::create()->build_single($crits);
                 $this->component_crits = $crits;
-            } else {
+            } else {           	
                 $this->component_crits[] = $crits;
             }
-            if (count($crits) > 1) {
+            if (is_array($crits) && count($crits) > 1) {
                 $this->join_operator = $or ? 'OR' : 'AND';
             }
         }
+    }
+    
+    public static function __set_state($array)
+    {
+    	$crits = new static();
+    	
+    	foreach ($array as $key => $value) {
+    		$crits->{$key} = $value;
+    	}
+    	
+    	return $crits;
     }
 
     public function normalize()
@@ -511,15 +543,61 @@ class Utils_RecordBrowser_Crits extends Utils_RecordBrowser_CritsInterface
      */
     public static function from_array($crits)
     {
-        $builder = new Utils_RecordBrowser_CritsBuilder();
-        $ret = $builder->build_from_array($crits);
-        return $ret;
+        return Utils_RecordBrowser_CritsBuilder::create()->build_from_array($crits);
     }
+    
+    public static function merge($a = array(), $b = array(), $or = false)
+    {
+    	if (is_array($a)) {
+    		$a = self::from_array($a);
+    	}
+    	if (!($a instanceof self)) {
+    		$a = new self($a);
+    	}
+    	if (is_array($b)) {
+    		$b = self::from_array($b);
+    	}
+    	if (!($b instanceof self)) {
+    		$b = new self($b);
+    	}
+    	if ($a->is_empty()) {
+    		return clone $b;
+    	}
+    	if ($b->is_empty()) {
+    		return clone $a;
+    	}
+    	$a = clone $a;
+    	$b = clone $b;
+    	return $or ? $a->_or($b) : $a->_and($b);
+	}
+	
+	public static function and($crits, $_ = null)
+    {
+		$ret = [];		
+		foreach (func_get_args() as $crits) {
+			$ret = self::merge($ret, $crits);
+		}
+    	
+    	return $ret;
+	}
+	
+	public static function or($crits, $_ = null)
+    {
+    	$ret = [];    	
+    	foreach (func_get_args() as $crits) {
+    		$ret = self::merge($ret, $crits, true);
+    	}
+    	
+    	return $ret;
+	}
 }
 
 class Utils_RecordBrowser_CritsBuilder
 {
-
+	public static function create() {
+		return new static();
+	}
+	
     public function build_single($crits)
     {
         $ret = array();
