@@ -18,6 +18,7 @@ class RBO_FieldDefinition {
     public $QFfield_callback;
     public $position;
     public $style;
+    public $help;
 
     private $_magic_callbacks = true;
 
@@ -25,7 +26,7 @@ class RBO_FieldDefinition {
      * Creates new generic FieldDefinition object.
      * Check if there is specific class for field type and use it, as it's
      * simpler to use, more readable and flexible. Look for RBO_Field_*
-     * 
+     *
      * @link http://www.epesi.org/index.php?title=Utils/RecordBrowser#Field_Properties
      * @param string $display_name field name
      * @param string $type field type
@@ -52,7 +53,7 @@ class RBO_FieldDefinition {
         $this->position = $position;
         $this->style = $style;
     }
-    
+
     /**
      * Disable magic callback for this field.
      * @return \RBO_FieldDefinition
@@ -61,7 +62,7 @@ class RBO_FieldDefinition {
         $this->_magic_callbacks = false;
         return $this;
     }
-    
+
     /**
      * Check that magic callback functionality is enabled for this field
      * @return bool
@@ -141,18 +142,18 @@ class RBO_FieldDefinition {
 
     /**
      * Set position of new field relative to old fields.
-     * 
+     *
      * <b>Use only when adding new fields to existing RecordSet</b>
-     * 
+     *
      * @param numeric|string|RBO_FieldDefinition $position
      * May be numeric - starting from 1. Field with position = 1 will be set
      * as first field in view. With position = 2 as second, etc.
      * All following fields order will remain as it was.
-     * 
+     *
      * Better option is to supply here name of field (e.g. 'First Name')
      * as it was set in field definition. New field will be set just after
      * supplied field.
-     * 
+     *
      * Best way is to supply RBO_FieldDefinition object. New field will
      * be placed as for field name parameter - just after field supplied here.
      * @return \RBO_FieldDefinition
@@ -172,6 +173,11 @@ class RBO_FieldDefinition {
      */
     function set_style($style) {
         $this->style = $style;
+        return $this;
+    }
+
+    function set_help($help) {
+        $this->help = $help;
         return $this;
     }
 
