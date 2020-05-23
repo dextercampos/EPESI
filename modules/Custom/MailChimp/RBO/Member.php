@@ -49,6 +49,9 @@ final class Custom_MailChimp_RBO_Member extends RBO_Recordset
     {
         $fields = [];
 
+        $fields[] = (new RBO_Field_Select(_M('List'), (new Custom_MailChimp_RBO_List())->table_name(),
+            ['name']))->set_visible();
+
         $fields[] = (new CRM_Contacts_RBO_Email(_M('Email')))->set_required()->set_visible();
 
         // TODO: common data ('html' or 'text').
@@ -57,6 +60,7 @@ final class Custom_MailChimp_RBO_Member extends RBO_Recordset
 
         // List Contact
         $fields[] = (new RBO_Field_Text(_M('Status'), 20))
+            ->set_visible()
             ->set_required()
             ->set_QFfield_callback([self::class, 'statusQfField']);
         $fields[] = (new RBO_Field_Text(_M('Subscriber Hash'), 255));
@@ -65,9 +69,6 @@ final class Custom_MailChimp_RBO_Member extends RBO_Recordset
         $fields[] = (new RBO_Field_Calculated(_M('Contact'), 'integer'))
             ->set_display_callback([self::class, 'contactDisplay'])
             ->set_QFfield_callback([self::class, 'contactQfField']);
-
-        $fields[] = (new RBO_Field_Select(_M('List'), (new Custom_MailChimp_RBO_List())->table_name(),
-            ['name']))->set_visible();
 
         return $fields;
     }
