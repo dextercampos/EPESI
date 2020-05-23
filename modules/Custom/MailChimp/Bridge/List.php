@@ -154,6 +154,11 @@ final class Custom_MailChimp_Bridge_List
                 'subscribe' => true,
                 'unsubscribe' => true,
             ],
+            'sources' => [
+                'user' => true,
+                'admin' => true,
+                'api' => true,
+            ],
         ];
 
         self::getMailChimp()->post(\sprintf('lists/%s/webhooks', $listId), $data);
