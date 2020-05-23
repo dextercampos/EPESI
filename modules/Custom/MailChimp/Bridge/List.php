@@ -149,7 +149,11 @@ final class Custom_MailChimp_Bridge_List
     public static function newWebhook($listId): bool
     {
         $data = [
-            'url' => self::getWebhookUrl()
+            'url' => self::getWebhookUrl(),
+            'events' => [
+                'subscribe' => true,
+                'unsubscribe' => true,
+            ],
         ];
 
         self::getMailChimp()->post(\sprintf('lists/%s/webhooks', $listId), $data);
