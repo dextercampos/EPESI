@@ -22,7 +22,7 @@ final class Custom_MailChimp_Bridge_Webhook
     {
         $mailchimpId = $data['list_id'];
 
-        $lists = (new Custom_MailChimp_RBO_List())->get_records(['mailchimp_id' => $mailchimpId])[0] ?? null;
+        $lists = (new Custom_MailChimp_RBO_List())->get_records(['mailchimp_id' => $mailchimpId]);
         $list = reset($lists);
 
         if ($list === false) {
@@ -33,7 +33,7 @@ final class Custom_MailChimp_Bridge_Webhook
         $members = (new Custom_MailChimp_RBO_Member())->get_records([
                 'list' => $list->id,
                 'email' => $data['email'],
-            ])[0] ?? null;
+            ]);
         $member = reset($members);
 
         // If member already in database list do nothing.
@@ -73,7 +73,7 @@ final class Custom_MailChimp_Bridge_Webhook
     {
         $mailchimpId = $data['list_id'];
 
-        $lists = (new Custom_MailChimp_RBO_List())->get_records(['mailchimp_id' => $mailchimpId])[0] ?? null;
+        $lists = (new Custom_MailChimp_RBO_List())->get_records(['mailchimp_id' => $mailchimpId]);
         $list = reset($lists);
 
         if ($list === false) {
@@ -82,9 +82,9 @@ final class Custom_MailChimp_Bridge_Webhook
 
         // Check if already in database.
         $members = (new Custom_MailChimp_RBO_Member())->get_records([
-                'list' => $list->id,
-                'email' => $data['email']
-            ])[0] ?? null;
+            'list' => $list->id,
+            'email' => $data['email']
+        ]);
         $member = reset($members);
 
         // If member not in database list do nothing.
