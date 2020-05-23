@@ -108,6 +108,7 @@ final class Custom_MailChimp_RBO_List extends RBO_Recordset
                 '<p>Sometimes people forget they signed up for an email newsletter. ' .
                 'To prevent false spam reports, it’s best to briefly remind your recipients how they got in your audience.</p>')
             ->set_required();
+
         $fields[] = (new RBO_Field_Checkbox(_M('Email Type Option')))
             ->set_help('<strong>Let subscribers pick plain-text or HTML emails</strong>' .
                 '<p>Whether the list supports multiple formats for emails. ' .
@@ -120,7 +121,7 @@ final class Custom_MailChimp_RBO_List extends RBO_Recordset
             ->set_help('<strong>MailChimp Unique Audience ID</strong>' .
                 '<p>Fill value if you want to link existing MailChimp list.</p>' .
                 '<p>Leave empty if you want to create new list in MailChimp.</p>')
-            ->set_extra();
+            ->set_visible();
 
         $fields[] = (new RBO_Field_Calculated(_M('Web ID'), 'text', 64))
             ->set_display_callback([self::class, 'internalField'])
