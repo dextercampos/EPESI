@@ -19,6 +19,19 @@ final class Custom_MailChimp_Bridge_List
 
     private static $mailchimp;
 
+    public static function getAdminEndpoint(bool $throwError = false): ?string
+    {
+        try {
+            return self::getMailChimp()->getAdminEndpoint();
+        } catch (Exception $exception) {
+            if ($throwError === true) {
+                throw $exception;
+            }
+        }
+
+        return null;
+    }
+
     public static function getApiEndpoint(bool $throwError = false): ?string
     {
         try {
@@ -66,7 +79,11 @@ final class Custom_MailChimp_Bridge_List
             throw new Exception($response['title'] ?? 'Error occurred', $response['status'] ?? 500);
         }
 
-        (new Custom_MailChimp_RBO_List())->update_record($listId, ['mailchimp_id' => $externalId, 'linked' => 1]);
+        (new Custom_MailChimp_RBO_List())->update_record($listId, [
+            'mailchimp_id' => $externalId,
+            'linked' => 1,
+            'web_id' => $response['web_id'] ?? '',
+        ]);
 
         // add webhook
         return self::newWebhook($externalId);
@@ -82,6 +99,35 @@ final class Custom_MailChimp_Bridge_List
         }
 
         return true;
+    }
+
+    public static function listLinkExisting(array $listData): bool
+    {
+        $listId = $listData['id'];
+        $externalId = $listData['mailchimp_id'] ?? null;
+        if ($externalId === null) {
+            return false;
+        }
+
+        $audience = self::mapListToAudience($listData);
+
+        /** @var array $response */
+        $response = self::getMailChimp()->patch(\sprintf('lists/%s', $externalId), $audience->toArray());
+
+        $externalId = $response['id'] ?? null;
+
+        if ($externalId === null) {
+            throw new Exception($response['title'] ?? 'Error occurred', $response['status'] ?? 500);
+        }
+
+        (new Custom_MailChimp_RBO_List())->update_record($listId, [
+            'mailchimp_id' => $externalId,
+            'linked' => 1,
+            'web_id' => $response['web_id'] ?? '',
+        ]);
+
+        // add webhook
+        return self::newWebhook($externalId);
     }
 
     public static function listUpdate($id, array $listData): bool
@@ -100,6 +146,17 @@ final class Custom_MailChimp_Bridge_List
         return true;
     }
 
+    public static function newWebhook($listId): bool
+    {
+        $data = [
+            'url' => self::getWebhookUrl()
+        ];
+
+        self::getMailChimp()->post(\sprintf('lists/%s/webhooks', $listId), $data);
+
+        return true;
+    }
+
     private static function mapListToAudience(array $listData): Audience
     {
         $audience = new Audience();
@@ -108,7 +165,7 @@ final class Custom_MailChimp_Bridge_List
 
         $audience->setName($listData['name'])
             ->setPermissionReminder($listData['permission_reminder'])
-            ->setEmailTypeOption($listData['email_type_option'] === '1')
+            ->setEmailTypeOption((bool)$listData['email_type_option'])
             ->setContact($contact)
             ->setCampaignDefaults($campaignDefaults);
 
@@ -126,16 +183,5 @@ final class Custom_MailChimp_Bridge_List
         $campaignDefaults->setSubject($listData['subject']);
 
         return $audience;
-    }
-
-    public static function newWebhook($listId): bool
-    {
-        $data = [
-            'url' => self::getWebhookUrl()
-        ];
-dump(\sprintf('lists/%s/webhooks', $listId), $data);
-        self::getMailChimp()->post(\sprintf('lists/%s/webhooks', $listId), $data);
-
-        return true;
     }
 }

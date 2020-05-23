@@ -3,7 +3,7 @@
 ## PHP
 ##
 ########################################################################################################################
-FROM php:7.1-fpm AS php
+FROM php:7.3-fpm AS php
 
 ## DEFAULT EXTENSIONS
 RUN apt-get update && apt-get install --no-install-recommends -y \

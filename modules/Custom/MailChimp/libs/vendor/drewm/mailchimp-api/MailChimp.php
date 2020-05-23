@@ -14,6 +14,7 @@ class MailChimp
 {
     private $api_key;
     private $api_endpoint = 'https://<dc>.api.mailchimp.com/3.0';
+    private $admin_endpoint = 'https://<dc>.admin.mailchimp.com';
 
     const TIMEOUT = 10;
 
@@ -50,6 +51,7 @@ class MailChimp
             }
             list(, $data_center) = explode('-', $this->api_key);
             $this->api_endpoint = str_replace('<dc>', $data_center, $this->api_endpoint);
+            $this->admin_endpoint = str_replace('<dc>', $data_center, $this->admin_endpoint);
         } else {
             $this->api_endpoint = $api_endpoint;
         }
@@ -77,6 +79,13 @@ class MailChimp
         return $this->api_endpoint;
     }
 
+    /**
+     * @return string The url to the API endpoint
+     */
+    public function getAdminEndpoint()
+    {
+        return $this->admin_endpoint;
+    }
 
     /**
      * Convert an email address into a 'subscriber hash' for identifying the subscriber in a method URL

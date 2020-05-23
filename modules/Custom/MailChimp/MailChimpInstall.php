@@ -112,7 +112,7 @@ class Custom_MailChimpInstall extends ModuleInstall
 
         // Default list
         Variable::set('mailchimp_def_from_email', $user['email'] ?? '');
-        Variable::set('mailchimp_def_from_name', $company);
+        Variable::set('mailchimp_def_from_name', CRM_ContactsCommon::get_company($company)['company_name'] ?? '');
         Variable::set('mailchimp_def_subject', 'Default Subject');
         Variable::set('mailchimp_def_language', 'en');
 

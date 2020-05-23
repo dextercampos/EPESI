@@ -42,17 +42,23 @@ class Custom_MailChimpCommon extends ModuleCommon
 
     public static function syncNewLists(): ?string
     {
-        try {
-            $newLists = (new Custom_MailChimp_RBO_List())->get_records(['mailchimp_id' => '', 'linked' => null]);
-            foreach ($newLists as $newList) {
-                Custom_MailChimp_Bridge_List::listCreate($newList->to_array());
+        $newLists = (new Custom_MailChimp_RBO_List())->get_records(['linked' => null]);
+        $messages = [];
+        foreach ($newLists as $newList) {
+            try {
+                $listData = $newList->to_array();
+                if ($listData['mailchimp_id']) {
+                    Custom_MailChimp_Bridge_List::listLinkExisting($listData);
+                    continue;
+                }
+                Custom_MailChimp_Bridge_List::listCreate($listData);
                 // TODO: sync merge tags also
+            } catch (Exception $exception) {
+                $messages[] = $exception->getMessage();
             }
-        } catch (Exception $exception) {
-            return $exception->getMessage();
         }
 
-        return null;
+        return implode('<br/>', $messages);
     }
 }
 
