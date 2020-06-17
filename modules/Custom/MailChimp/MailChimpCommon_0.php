@@ -52,7 +52,6 @@ class Custom_MailChimpCommon extends ModuleCommon
                     continue;
                 }
                 Custom_MailChimp_Bridge_List::listCreate($listData);
-                // TODO: sync merge tags also
             } catch (Exception $exception) {
                 $messages[] = $exception->getMessage();
             }

@@ -60,14 +60,13 @@ final class Custom_MailChimp_RBO_List extends RBO_Recordset
     {
         $mergeFieldRbo = new Custom_MailChimp_RBO_MergeField();
         if ($mode === 'added' || $mode === 'restored') {
-            // POC: new lists are added to mailchimp through the cron.
-
             // Add default merge fields
             $defaultMergeFields = $mergeFieldRbo->getDefaultFields();
             foreach ($defaultMergeFields as $mergeField) {
                 $newMergeField = $mergeField->clone_data();
                 $newMergeField->default = 0;
                 $newMergeField->list = $values['id'];
+
                 $newMergeField->save();
             }
 

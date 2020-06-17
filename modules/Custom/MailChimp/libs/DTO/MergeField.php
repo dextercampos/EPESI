@@ -14,6 +14,9 @@ final class MergeField implements ArrayableInterface
     private $name;
 
     /** @var string */
+    private $tag;
+
+    /** @var string */
     private $type;
 
     /**
@@ -30,6 +33,14 @@ final class MergeField implements ArrayableInterface
     public function getName(): string
     {
         return $this->name;
+    }
+
+    /**
+     * @return string
+     */
+    public function getTag(): string
+    {
+        return $this->tag;
     }
 
     /**
@@ -60,6 +71,18 @@ final class MergeField implements ArrayableInterface
     public function setName(string $name): MergeField
     {
         $this->name = $name;
+
+        return $this;
+    }
+
+    /**
+     * @param string $tag
+     *
+     * @return MergeField
+     */
+    public function setTag(string $tag): MergeField
+    {
+        $this->tag = $tag;
 
         return $this;
     }

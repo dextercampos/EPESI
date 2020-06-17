@@ -4,6 +4,7 @@ declare(strict_types=1);
 use Dex\MailChimp\DTO\Audience;
 use Dex\MailChimp\DTO\CampaignDefault;
 use Dex\MailChimp\DTO\Contact;
+use Dex\MailChimp\DTO\MergeField;
 use DrewM\MailChimp\MailChimp;
 
 defined('_VALID_ACCESS') || die('Direct access forbidden');
@@ -85,6 +86,9 @@ final class Custom_MailChimp_Bridge_List
             'web_id' => $response['web_id'] ?? '',
         ]);
 
+        // add merge fields
+        self::addDefaultMergeFields($externalId, $listId);
+
         // add webhook
         return self::newWebhook($externalId);
     }
@@ -126,6 +130,8 @@ final class Custom_MailChimp_Bridge_List
             'web_id' => $response['web_id'] ?? '',
         ]);
 
+        self::addDefaultMergeFields($externalId, $listId);
+
         // add webhook
         return self::newWebhook($externalId);
     }
@@ -164,6 +170,36 @@ final class Custom_MailChimp_Bridge_List
         self::getMailChimp()->post(\sprintf('lists/%s/webhooks', $listId), $data);
 
         return true;
+    }
+
+    private static function addDefaultMergeFields($externalListId, $listId): array
+    {
+        $mergeFieldRbo = new Custom_MailChimp_RBO_MergeField();
+        $mergeFields = $mergeFieldRbo->get_records(['list_id' => $listId]);
+
+        foreach ($mergeFields as $mergeFieldData) {
+            $mergeField = new MergeField();
+            $mergeField
+                ->setName($mergeFieldData->get_val('contact_field'))
+                ->setTag($mergeFieldData->tag)
+                ->setType($mergeFieldData->type)
+                ->setListId($externalListId);
+
+            /** @var array $response */
+            $response = self::getMailChimp()->post(
+                \sprintf('lists/%s/merge-fields', $externalListId),
+                $mergeField->toArray()
+            );
+
+            $mergeId = $response['merge_id'] ?? null;
+
+            if ($mergeId === null) {
+                continue;
+            }
+
+            $mergeFieldData->merge_id = $mergeId;
+            $mergeFieldData->save();
+        }
     }
 
     private static function mapListToAudience(array $listData): Audience
