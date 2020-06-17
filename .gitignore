@@ -10,6 +10,7 @@ modules/*
 !modules/Apps
 !modules/Base
 !modules/CRM
+!modules/Custom
 !modules/Data
 !modules/FirstRun
 !modules/Libs
@@ -26,5 +27,6 @@ Thumbs.db
 # Composer packages directory
 vendor
 !modules/CRM/Roundcube/RC/vendor
+!modules/Custom/**/vendor
 
 tests/config.yml
