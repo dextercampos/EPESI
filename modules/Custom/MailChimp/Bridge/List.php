@@ -86,11 +86,13 @@ final class Custom_MailChimp_Bridge_List
             'web_id' => $response['web_id'] ?? '',
         ]);
 
+        // add webhook
+        $webhookAdded = self::newWebhook($externalId);
+
         // add merge fields
         self::addDefaultMergeFields($externalId, $listId);
 
-        // add webhook
-        return self::newWebhook($externalId);
+        return $webhookAdded;
     }
 
     public static function listDelete($id)
@@ -130,10 +132,13 @@ final class Custom_MailChimp_Bridge_List
             'web_id' => $response['web_id'] ?? '',
         ]);
 
+        // add webhook
+        $webhookAdded = self::newWebhook($externalId);
+
+        // add merge fields
         self::addDefaultMergeFields($externalId, $listId);
 
-        // add webhook
-        return self::newWebhook($externalId);
+        return $webhookAdded;
     }
 
     public static function listUpdate($id, array $listData): bool
@@ -172,7 +177,7 @@ final class Custom_MailChimp_Bridge_List
         return true;
     }
 
-    private static function addDefaultMergeFields($externalListId, $listId): array
+    private static function addDefaultMergeFields($externalListId, $listId): void
     {
         $mergeFieldRbo = new Custom_MailChimp_RBO_MergeField();
         $mergeFields = $mergeFieldRbo->get_records(['list_id' => $listId]);
